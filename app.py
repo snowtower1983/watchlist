@@ -66,3 +66,6 @@ from flask import render_template
 @app.route('/index')
 def index():
     return render_template('index.html',name=name,movies=movies)
+
+#url_for() 函数的用法，传入端点值（视图函数的名称）和参数，它会返回对应的 URL。
+#对于静态文件，需要传入的端点值是 static，同时使用 filename 参数来传入相对于 static 文件夹的文件路径。
