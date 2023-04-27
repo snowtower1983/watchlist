@@ -69,3 +69,84 @@ def index():
 
 #url_for() 函数的用法，传入端点值（视图函数的名称）和参数，它会返回对应的 URL。
 #对于静态文件，需要传入的端点值是 static，同时使用 filename 参数来传入相对于 static 文件夹的文件路径。
+
+
+#数据库配置
+import os
+import sys
+
+from flask_sqlalchemy import SQLAlchemy
+
+WIN = sys.platform.startswith('win')
+if WIN:
+    prefix = 'sqlite:///'
+else:
+    prefix = 'sqlite:////'
+
+# Flask 提供了一个统一的接口来写入和获取这些配置变量：Flask.config 字典
+app.config['SQLALCHEMY_DATABASE_URI'] = prefix + os.path.join(app.root_path,'data.db')
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
+db = SQLAlchemy(app)
+
+# 创建数据库模型
+class User(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(20))
+
+class Movie(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(60))
+    year = db.Column(db.String(4))
+
+
+#编写一个自定义命令来自动执行创建数据库表操作
+import click
+
+@app.cli.command()
+@click.option('--drop',is_flag=True, help="create after drop.")
+def initdb(drop):
+    """Initialize the database."""
+    if drop:
+        db.drop_all()
+    db.create_all()
+    click.echo('Initialized database.')
+
+
+#从数据库中读取数据
+@app.route('/indexsql')
+def indexsql():
+    user = User.query.first()
+    movies = Movie.query.all()
+    return render_template('index.html',user=user,movies=movies)
+
+
+# 编写一个命令函数，将虚拟数据添加到数据库
+@app.cli.command()
+def forge():
+    """Generate fake data."""
+    #db.create_all()
+
+    # 全局的两个变量移动到这个函数内
+    name = 'laoma'
+    movies = [
+        {'title': 'My Neighbor Totoro', 'year': '1988'},
+        {'title': 'Dead Poets Society', 'year': '1989'},
+        {'title': 'A Perfect World', 'year': '1993'},
+        {'title': 'Leon', 'year': '1994'},
+        {'title': 'Mahjong', 'year': '1996'},
+        {'title': 'Swallowtail Butterfly', 'year': '1996'},
+        {'title': 'King of Comedy', 'year': '1999'},
+        {'title': 'Devils on the Doorstep', 'year': '1999'},
+        {'title': 'WALL-E', 'year': '2008'},
+        {'title': 'The Pork of Music', 'year': '2012'},
+    ]
+
+    user = User(name=name)
+    db.session.add(user)
+    for m in movies:
+        movie = Movie(title=m['title'], year=m['year'])
+        db.session.add(movie)
+
+    db.session.commit()
+    click.echo('Done.')
