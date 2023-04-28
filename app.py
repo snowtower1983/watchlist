@@ -150,3 +150,24 @@ def forge():
 
     db.session.commit()
     click.echo('Done.')
+
+#使用 app.errorhandler() 装饰器注册一个错误处理函数
+# @app.errorhandler(404) # 传入要处理的错误代码
+# def page_not_found(e): # 接受异常对象作为参数
+#     user = User.query.first()
+#     return render_template('404.html',user=user), 404
+
+
+# 对于多个模板内都需要使用的变量
+# 使用 app.context_processor 装饰器注册一个模板上下文处理函数
+# 返回的变量（字典键值对形式）将会统一注入到每一个模板的上下文环境中，可以直接在模板中使用。
+@app.context_processor
+def inject_user():
+    user = User.query.first()
+    return dict(user=user) #返回字典，等同于 return {'user': user}
+
+# 因此更新404错误处理函数
+@app.errorhandler(404)
+def page_not_found(e):
+    return render_template('404.html'),404
+
